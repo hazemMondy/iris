@@ -96,12 +96,24 @@ def mini_patcher(X,Y,batch_size:int=100)->(list,list):
         mini_batch_Y.append(mini_batch_y.reshape(batch_size))
     
     # For handling the end case (last mini-batch < mini_batch_size)
-    if m % batch_size != 0:
-        mini_batch_x = shuffled_x[:, batch_size * (k + 1) :]
-        mini_batch_y = shuffled_y[:, batch_size * (k + 1) :]
+    # if m % batch_size != 0:
+    #     mini_batch_x = shuffled_x[:, batch_size * (k + 1) :]
+    #     mini_batch_y = shuffled_y[:, batch_size * (k + 1) :]
+    #     print(type(mini_batch_x))
+    #     print(type(mini_batch_X))
+    #     print("smal")
+    #     try:
 
-        mini_batch_X.append(mini_batch_x)
-        mini_batch_Y.append(mini_batch_y.reshape(batch_size))
+    #         print(mini_batch_x.shape)
+    #     except:
+    #         print(len(mini_batch_x))
+    #     print("big")
+        
+    #     print(len(mini_batch_X))
+
+    #     mini_batch_X.append(mini_batch_x)
+    #     #.reshape(mini_batch_y.shape[1])
+    #     mini_batch_Y.append(mini_batch_y)
     
     return mini_batch_X , mini_batch_Y
 
