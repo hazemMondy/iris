@@ -96,37 +96,23 @@ def mini_patcher(X,Y,batch_size:int=100)->(list,list):
         mini_batch_Y.append(mini_batch_y.reshape(batch_size))
     
     # For handling the end case (last mini-batch < mini_batch_size)
-    # if m % batch_size != 0:
-    #     mini_batch_x = shuffled_x[:, batch_size * (k + 1) :]
-    #     mini_batch_y = shuffled_y[:, batch_size * (k + 1) :]
-    #     print(type(mini_batch_x))
-    #     print(type(mini_batch_X))
-    #     print("smal")
-    #     try:
+    if m % batch_size != 0:
+        mini_batch_x = shuffled_x[:, batch_size * (k + 1) :]
+        mini_batch_y = shuffled_y[:, batch_size * (k + 1) :]
 
-    #         print(mini_batch_x.shape)
-    #     except:
-    #         print(len(mini_batch_x))
-    #     print("big")
-        
-    #     print(len(mini_batch_X))
-
-    #     mini_batch_X.append(mini_batch_x)
-    #     #.reshape(mini_batch_y.shape[1])
-    #     mini_batch_Y.append(mini_batch_y)
+        mini_batch_X.append(mini_batch_x)
+        #.reshape(mini_batch_y.shape[1])
+        mini_batch_Y.append(mini_batch_y)
     
     return mini_batch_X , mini_batch_Y
 
-def epoch(iterations:int,weights,x_train,y_train, x_test, y_test,v:float,s:float,t:int=0,optimizer="gd",alpha:float= 0.0001,lambd:float = 0):
+def _epoch(iterations:int,weights,x_train,y_train, x_test, y_test,v:float,s:float,t:int=0,optimizer="gd",alpha:float= 0.0001,lambd:float = 0):
     
-    costs, acc_train, acc_test= [],[],[]
+    costs= []
     m = x_train.shape[1]
     #lambd = 0.5
 
-    for i in range (iterations):
-        acc_x ,acc_y = accuracy(weights, x_train, y_train, x_test, y_test)
-        acc_train.append(acc_x) ; acc_test.append(acc_y)
-
+    for _ in range (iterations):
         # L2 reg
         # reg_lambda = np.linalg.norm(weights)
         # reg_lambda = np.sum(weights,axis=0)
@@ -147,29 +133,35 @@ def epoch(iterations:int,weights,x_train,y_train, x_test, y_test,v:float,s:float
             weights = weights - alpha * deltas/m
             #b += -(alpha**2)*(1./m) * db
         costs.append(np.linalg.norm(deltas)/m + reg_cost)
-    return weights , costs , acc_train, acc_test
+    return weights , costs
 
 def epoch_minpatch(iterations:int,weights,x_train,y_train, x_test, y_test,optimizer:str="gd",alpha:float= 0.00001,batch_size:int=100,lambd:float = 0):
 
     x_train_list , y_train_list = mini_patcher(x_train, y_train,batch_size=batch_size)
-    costs,X_acc , Y_acc =[], [], []
+    costs =[]
     t=0
     v,s = initialize_adam(weights=weights)
     #vb,sb = initialize_adam(weights=b)
-    for i in range(iterations):
+    acc_train, acc_test= [],[]
+    weights_dict = {}
+    weights_dict[0]=weights
+    for it in range(iterations):
+        w = weights_dict[it]
         for i,val in enumerate(x_train_list):
-            weights, cost , x_acc , y_acc =epoch(1, weights,
-                                                val, y_train_list[i] ,
-                                                x_test, y_test,
-                                                v,s,
-                                                t=t,
-                                                optimizer=optimizer,
-                                                alpha=alpha,
-                                                lambd= lambd)
+            w, cost =  _epoch(1, w,
+                                        val, y_train_list[i],
+                                        x_test, y_test,
+                                        v,s,
+                                        t=t,
+                                        optimizer=optimizer,
+                                        alpha=alpha,
+                                        lambd= lambd)
             costs += cost
-            X_acc += x_acc
-            Y_acc += y_acc
-    return weights , costs , X_acc , Y_acc
+        weights_dict[it+1] = w
+        acc_x ,acc_y = accuracy(weights_dict[it], x_train, y_train, x_test, y_test)
+        acc_train.append(acc_x)
+        acc_test.append(acc_y)
+    return weights_dict , costs , acc_train , acc_test
 
 def eval(x:list,y:list,cost:list,text1='train acc',text2='test acc' ):
 
